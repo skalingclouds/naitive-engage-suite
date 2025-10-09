@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FileUpload } from "@/components/file-upload";
 import { MultiStepForm, FormData } from "@/components/multi-step-form";
@@ -170,20 +171,27 @@ const mockResults: AnalysisResults = {
     setAnalysisResults(null);
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+return (
+    <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
       {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Scale className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               <span className="font-semibold text-lg">WageViolation.ai</span>
             </div>
+
+            <nav className="hidden md:flex items-center gap-6 text-sm">
+              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">How it works</a>
+              <a href="#what-we-check" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">What we check</a>
+              <a href="#security" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">Security</a>
+              <a href="#faq" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">FAQ</a>
+            </nav>
             
             <div className="flex items-center gap-3">
               {/* Language Toggle */}
-              <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              <div className="hidden sm:flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
                 <button
                   onClick={() => setLanguage('en')}
                   className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
@@ -206,26 +214,32 @@ const mockResults: AnalysisResults = {
                 </button>
               </div>
               
+              <Link href="/sign-in" className="hidden sm:inline-block text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">Sign in</Link>
+              <a href="#upload" className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Get started</a>
               <ThemeToggle />
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+<main className="container mx-auto px-4 py-12 max-w-6xl">
         {/* Hero Section */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-16">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full mb-6">
             <Scale className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           </div>
           
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-blue-500 to-green-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
             {t("title")}
           </h1>
           
-          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8">
+          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-8">
             {t("subtitle")}
           </p>
+          <div className="flex items-center justify-center gap-3">
+            <a href="#upload" className="inline-flex items-center rounded-md bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700">Start free analysis</a>
+            <a href="#how-it-works" className="inline-flex items-center rounded-md border px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-800">How it works</a>
+          </div>
 
           {/* Progress Indicator */}
           <div className="flex items-center justify-center gap-2 mb-8">
@@ -285,19 +299,112 @@ const mockResults: AnalysisResults = {
           </div>
         </div>
 
+        {/* Marketing Sections */}
+        <section id="how-it-works" className="py-8">
+          <h2 className="text-2xl font-semibold text-center mb-6 text-gray-900 dark:text-white">How it works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="p-6 text-center">
+              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-3">
+                <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="font-medium mb-1">1. Upload your pay stub</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Take a photo or upload a PDF of your pay stub. We automatically enhance image quality.</p>
+            </Card>
+            <Card className="p-6 text-center">
+              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-3">
+                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="font-medium mb-1">2. Tell us about you</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Provide basic information so we can tailor the analysis and connect you with help if needed.</p>
+            </Card>
+            <Card className="p-6 text-center">
+              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="font-medium mb-1">3. Get results</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">See potential violations in seconds, with clear next steps and optional attorney follow‑up.</p>
+            </Card>
+          </div>
+        </section>
+
+        <section id="what-we-check" className="py-8">
+          <h2 className="text-2xl font-semibold text-center mb-6 text-gray-900 dark:text-white">What we check</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="p-5">
+              <h4 className="font-medium mb-1">Minimum Wage</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Verify hourly rates meet California state and local requirements.</p>
+            </Card>
+            <Card className="p-5">
+              <h4 className="font-medium mb-1">Overtime</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Check daily/weekly overtime and double-time calculations.</p>
+            </Card>
+            <Card className="p-5">
+              <h4 className="font-medium mb-1">Meal & Rest Breaks</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Identify premiums owed when breaks are missed, short, or late.</p>
+            </Card>
+            <Card className="p-5">
+              <h4 className="font-medium mb-1">Pay Stub Info</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Confirm required items: employer details, hours, rates, deductions, and dates.</p>
+            </Card>
+          </div>
+        </section>
+
+        <section id="security" className="py-8">
+          <h2 className="text-2xl font-semibold text-center mb-6 text-gray-900 dark:text-white">Security & privacy</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="p-5">
+              <Shield className="w-6 h-6 text-blue-600 mb-2" />
+              <h4 className="font-medium mb-1">Your data, protected</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Encrypted transfer and strict access controls. We keep your data confidential.</p>
+            </Card>
+            <Card className="p-5">
+              <Clock className="w-6 h-6 text-blue-600 mb-2" />
+              <h4 className="font-medium mb-1">Fast & accurate</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Results typically in under 60 seconds with clear, human‑readable summaries.</p>
+            </Card>
+            <Card className="p-5">
+              <Scale className="w-6 h-6 text-blue-600 mb-2" />
+              <h4 className="font-medium mb-1">Attorney‑ready</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Optional attorney follow‑up to review findings and discuss your options.</p>
+            </Card>
+          </div>
+        </section>
+
+        <section id="faq" className="py-8">
+          <h2 className="text-2xl font-semibold text-center mb-6 text-gray-900 dark:text-white">FAQ</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="p-5">
+              <h4 className="font-medium mb-1">Is this legal advice?</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">No. Our analysis is informational and not a substitute for advice from a licensed attorney.</p>
+            </Card>
+            <Card className="p-5">
+              <h4 className="font-medium mb-1">Which states are supported?</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">This MVP focuses on California. Additional states are coming soon.</p>
+            </Card>
+            <Card className="p-5">
+              <h4 className="font-medium mb-1">What files can I upload?</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">PDF, JPG, or PNG up to 10MB. Clear images produce the best results.</p>
+            </Card>
+            <Card className="p-5">
+              <h4 className="font-medium mb-1">Will someone contact me?</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Only if you consent. You can request an attorney to review your results.</p>
+            </Card>
+          </div>
+        </section>
+
         {/* Main Content */}
-        <div className="space-y-8">
+        <div className="space-y-10">
           {currentStep === 'upload' && (
-            <div className="space-y-6">
+            <div id="upload" className="space-y-6">
               <FileUpload 
                 onFileSelect={handleFileSelect} 
                 isProcessing={isProcessing}
               />
               
               {/* Trust Indicators */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                 <Card className="p-4 text-center">
-                  <Shield className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+                  <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
                   <h3 className="font-semibold text-sm mb-1">Secure & Private</h3>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
                     Your data is encrypted and protected
@@ -313,7 +420,7 @@ const mockResults: AnalysisResults = {
                 </Card>
                 
                 <Card className="p-4 text-center">
-                  <Scale className="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
+                  <Scale className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
                   <h3 className="font-semibold text-sm mb-1">Legal Experts</h3>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
                     Reviewed by employment attorneys
@@ -425,19 +532,19 @@ const mockResults: AnalysisResults = {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-sm text-gray-600 dark:text-gray-400">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
-              <span>© 2024 WageViolation.ai</span>
+              <span>© 2025 WageViolation.ai</span>
               <span>•</span>
-              <button className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+              <Link href="/privacy" className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
                 {t("privacyPolicy")}
-              </button>
+              </Link>
               <span>•</span>
-              <button className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+              <Link href="/terms" className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
                 {t("termsOfService")}
-              </button>
+              </Link>
               <span>•</span>
-              <button className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+              <a href="#upload" className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
                 {t("contactUs")}
-              </button>
+              </a>
             </div>
             <p className="text-xs">
               This service is for informational purposes only and does not constitute legal advice.
