@@ -43,7 +43,26 @@ export default function Home() {
           A modern full-stack TypeScript starter with authentication, database, and UI components
         </p>
         
-        <HeroAuthButtons />
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <HeroAuthButtons />
+          <Button 
+            asChild 
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3"
+          >
+            <a href="/paystub">
+              Check Pay Stub Violations
+            </a>
+          </Button>
+          <Button 
+            asChild 
+            variant="outline"
+            className="border-gray-300 text-gray-700 hover:bg-gray-50 font-medium px-6 py-3"
+          >
+            <a href="/internal">
+              Internal Portal
+            </a>
+          </Button>
+        </div>
       </div>
 
       <main className="container mx-auto px-4 sm:px-6 pb-12 sm:pb-8 max-w-5xl">
