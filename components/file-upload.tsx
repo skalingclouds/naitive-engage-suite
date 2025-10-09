@@ -72,7 +72,7 @@ export function FileUpload({ onFileSelect, isProcessing = false }: FileUploadPro
     if (files.length > 0) {
       handleFile(files[0]);
     }
-  }, [isProcessing]);
+}, [isProcessing, handleFile]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();

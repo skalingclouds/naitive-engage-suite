@@ -11,8 +11,6 @@ import {
   CheckCircle2, 
   Clock, 
   FileText,
-  ArrowRight,
-  Globe,
   Phone,
   Users,
   Scale
@@ -21,12 +19,27 @@ import { useLanguage } from "@/contexts/language-context";
 import { ImageProcessor, ImageProcessingResult } from "@/lib/image-processor";
 import { toast } from "sonner";
 
+type Violation = {
+  type: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high';
+  confidence: number;
+};
+
+type AnalysisResults = {
+  analysisId: string;
+  violationsFound: boolean;
+  confidence: number;
+  violations: Violation[];
+  summary: string;
+};
+
 export default function Home() {
   const { t, language, setLanguage } = useLanguage();
   const [currentStep, setCurrentStep] = useState<'upload' | 'form' | 'processing' | 'results'>('upload');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [analysisResults, setAnalysisResults] = useState<any>(null);
+const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
 
   const handleFileSelect = async (file: File) => {
     try {
@@ -59,7 +72,7 @@ export default function Home() {
     }
   };
 
-  const handleFormSubmit = async (formData: FormData) => {
+const handleFormSubmit = async (_formData: FormData) => {
     if (!selectedFile) {
       toast.error("Please select a file first");
       return;
@@ -112,7 +125,7 @@ export default function Home() {
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Mock results for demo
-      const mockResults = {
+const mockResults: AnalysisResults = {
         analysisId: uploadData.analysisId,
         violationsFound: true,
         confidence: 0.87,
@@ -369,7 +382,7 @@ export default function Home() {
 
                 {analysisResults.violationsFound && (
                   <div className="space-y-3 max-w-md mx-auto">
-                    {analysisResults.violations.map((violation: any, index: number) => (
+{analysisResults.violations.map((violation: Violation, index: number) => (
                       <div key={index} className="bg-white dark:bg-gray-800 rounded-lg p-4 text-left">
                         <div className="flex items-start gap-3">
                           <div className={`w-2 h-2 rounded-full mt-2 ${

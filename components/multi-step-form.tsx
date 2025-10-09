@@ -54,7 +54,7 @@ export function MultiStepForm({ onSubmit, isSubmitting = false }: MultiStepFormP
   const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;
 
-  const updateFormData = (field: keyof FormData, value: any) => {
+const updateFormData = <T extends keyof FormData>(field: T, value: FormData[T]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -158,7 +158,7 @@ export function MultiStepForm({ onSubmit, isSubmitting = false }: MultiStepFormP
             <Checkbox
               id="tcpa-consent"
               checked={formData.tcpaConsent}
-              onCheckedChange={(checked) => updateFormData("tcpaConsent", checked)}
+onCheckedChange={(checked) => updateFormData("tcpaConsent", Boolean(checked))}
               disabled={isSubmitting}
             />
             <div className="space-y-2">
@@ -304,7 +304,7 @@ export function MultiStepForm({ onSubmit, isSubmitting = false }: MultiStepFormP
           <Checkbox
             id="confirm-info"
             checked={formData.confirmed}
-            onCheckedChange={(checked) => updateFormData("confirmed", checked)}
+onCheckedChange={(checked) => updateFormData("confirmed", Boolean(checked))}
             disabled={isSubmitting}
           />
           <div>
