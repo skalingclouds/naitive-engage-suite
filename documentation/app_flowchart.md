@@ -1,14 +1,11 @@
 flowchart TD
-  Start[Landing Page]
-  SignUpPage[Sign Up Page]
-  SignInPage[Sign In Page]
-  AuthAPI[Authentication API Endpoint]
-  DashboardPage[Dashboard Page]
-  Start -->|Select Sign Up| SignUpPage
-  Start -->|Select Sign In| SignInPage
-  SignUpPage -->|Submit Credentials| AuthAPI
-  SignInPage -->|Submit Credentials| AuthAPI
-  AuthAPI -->|Success| DashboardPage
-  AuthAPI -->|Error| SignUpPage
-  AuthAPI -->|Error| SignInPage
-  DashboardPage -->|Click Logout| Start
+    Start[User visits app] -->|Navigate to| SignInPage[Sign In Page]
+    Start -->|Navigate to| SignUpPage[Sign Up Page]
+    SignInPage -->|Submit credentials| AuthAPIRoute[Auth API Route]
+    SignUpPage -->|Submit credentials| AuthAPIRoute
+    AuthAPIRoute -->|Valid credentials| DashboardLayout[Dashboard Layout]
+    AuthAPIRoute -->|Invalid credentials| ErrorMessage[Authentication Error]
+    DashboardLayout --> DashboardPage[Dashboard Page]
+    DashboardPage -->|Load static data| StaticData[data json]
+    DashboardPage -->|Fetch dynamic data| DashboardAPIRoute[Dashboard Data API Route]
+    DashboardPage -->|Render UI| DashboardUI[Render Dashboard UI]

@@ -1,0 +1,506 @@
+# Pay Stub OCR Processing Infrastructure
+# AWS SAM template for serverless OCR processing pipeline
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Pay Stub OCR Processing Pipeline with Multi-Provider Fallback'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'development'
+    AllowedValues: ['development', 'staging', 'production']
+    Description: 'Environment name'
+
+  DBHost:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: 'PostgreSQL database host'
+    Default: '/paystub-ocr/db/host'
+
+  DBName:
+    Type: String
+    Default: 'paystub_ocr'
+    Description: 'Database name'
+
+  DBUser:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: 'Database username'
+    Default: '/paystub-ocr/db/user'
+
+  DBPassword:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: 'Database password'
+    Default: '/paystub-ocr/db/password'
+
+  DBPort:
+    Type: String
+    Default: '5432'
+    Description: 'Database port'
+
+Globals:
+  Function:
+    Timeout: 900
+    MemorySize: 1024
+    Runtime: nodejs18.x
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        DB_HOST: !Ref DBHost
+        DB_NAME: !Ref DBName
+        DB_USER: !Ref DBUser
+        DB_PASSWORD: !Ref DBPassword
+        DB_PORT: !Ref DBPort
+
+Resources:
+  # S3 Buckets
+  UploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'paystub-uploads-${Environment}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: 'DeleteUnprocessedAfter90Days'
+            Status: Enabled
+            ExpirationInDays: 90
+            Filter:
+              Prefix: 'unprocessed/'
+          - Id: 'DeleteProcessedAfter1Year'
+            Status: Enabled
+            ExpirationInDays: 365
+            Filter:
+              Prefix: 'processed/'
+
+  ProcessedBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'paystub-processed-${Environment}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # DynamoDB Tables
+  AnalysisTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'paystub-analysis-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: analysisId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: analysisId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: CreatedAtIndex
+          KeySchema:
+            - AttributeName: createdAt
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  OCRResultsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'ocr-results-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: analysisId
+          AttributeType: S
+        - AttributeName: service
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: analysisId
+          KeyType: HASH
+        - AttributeName: service
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: TimestampIndex
+          KeySchema:
+            - AttributeName: timestamp
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  ErrorLogTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'error-log-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: errorId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+        - AttributeName: serviceName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: errorId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: TimestampIndex
+          KeySchema:
+            - AttributeName: timestamp
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ServiceNameIndex
+          KeySchema:
+            - AttributeName: serviceName
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # SQS Queues
+  OCRQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'paystub-ocr-${Environment}.fifo'
+      FifoQueue: true
+      ContentBasedDeduplication: true
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600 # 14 days
+      DeadLetterTargetArn: !GetAtt OCRDeadLetterQueue.Arn
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt OCRDeadLetterQueue.Arn
+        maxReceiveCount: 3
+
+  OCRDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'paystub-ocr-dlq-${Environment}'
+      MessageRetentionPeriod: 1209600 # 14 days
+
+  FallbackQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'paystub-fallback-${Environment}.fifo'
+      FifoQueue: true
+      ContentBasedDeduplication: true
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600
+      DeadLetterTargetArn: !GetAtt FallbackDeadLetterQueue.Arn
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt FallbackDeadLetterQueue.Arn
+        maxReceiveCount: 3
+
+  FallbackDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'paystub-fallback-dlq-${Environment}'
+      MessageRetentionPeriod: 1209600
+
+  FinalProcessingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'paystub-final-${Environment}.fifo'
+      FifoQueue: true
+      ContentBasedDeduplication: true
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600
+
+  RulesEngineQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'paystub-rules-${Environment}.fifo'
+      FifoQueue: true
+      ContentBasedDeduplication: true
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 1209600
+
+  # Lambda Functions
+  S3TriggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'paystub-s3-trigger-${Environment}'
+      CodeUri: lambda/s3-trigger/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 512
+      Timeout: 60
+      Environment:
+        Variables:
+          OCR_QUEUE_URL: !Ref OCRQueue
+          ANALYSIS_TABLE: !Ref AnalysisTable
+      Events:
+        FileUpload:
+          Type: S3
+          Properties:
+            Bucket: !Ref UploadBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.pdf'
+                  - Name: suffix
+                    Value: '.jpg'
+                  - Name: suffix
+                    Value: '.jpeg'
+                  - Name: suffix
+                    Value: '.png'
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt OCRQueue.QueueName
+
+  ImagePreprocessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'paystub-image-preprocessor-${Environment}'
+      CodeUri: lambda/image-preprocessor/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 2048
+      Timeout: 300
+      Environment:
+        Variables:
+          PROCESSED_BUCKET: !Ref ProcessedBucket
+          ANALYSIS_TABLE: !Ref AnalysisTable
+      Events:
+        OCRJobs:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt OCRQueue.Arn
+            BatchSize: 1
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+        - S3CrudPolicy:
+            BucketName: !Ref ProcessedBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*'
+
+  OCRProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'paystub-ocr-processor-${Environment}'
+      CodeUri: lambda/ocr-processor/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 1024
+      Timeout: 900
+      Environment:
+        Variables:
+          ANALYSIS_TABLE: !Ref AnalysisTable
+          OCR_RESULTS_TABLE: !Ref OCRResultsTable
+          FALLBACK_QUEUE_URL: !Ref FallbackQueue
+      Events:
+        PreprocessedImages:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt OCRQueue.Arn
+            BatchSize: 1
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref ProcessedBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OCRResultsTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt FallbackQueue.QueueName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - textract:AnalyzeDocument
+                - textract:StartDocumentAnalysis
+                - textract:GetDocumentAnalysis
+              Resource: '*'
+
+  OCRFallbackFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'paystub-ocr-fallback-${Environment}'
+      CodeUri: lambda/ocr-fallback/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 1024
+      Timeout: 900
+      Environment:
+        Variables:
+          ANALYSIS_TABLE: !Ref AnalysisTable
+          OCR_RESULTS_TABLE: !Ref OCRResultsTable
+          FINAL_RESULTS_QUEUE_URL: !Ref FinalProcessingQueue
+          AZURE_COMPUTER_VISION_KEY: !Sub '{{resolve:ssm:/paystub-ocr/azure/vision-key:1}}'
+          AZURE_COMPUTER_VISION_ENDPOINT: !Sub '{{resolve:ssm:/paystub-ocr/azure/vision-endpoint:1}}'
+      Events:
+        FallbackJobs:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt FallbackQueue.Arn
+            BatchSize: 1
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref ProcessedBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OCRResultsTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt FinalProcessingQueue.QueueName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+              Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*'
+
+  OCRNormalizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'paystub-ocr-normalizer-${Environment}'
+      CodeUri: lambda/ocr-normalizer/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      MemorySize: 1024
+      Timeout: 300
+      Environment:
+        Variables:
+          ANALYSIS_TABLE: !Ref AnalysisTable
+          RULES_ENGINE_QUEUE_URL: !Ref RulesEngineQueue
+      Events:
+        FinalJobs:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt FinalProcessingQueue.Arn
+            BatchSize: 1
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt RulesEngineQueue.QueueName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - rds-db:connect
+              Resource: !Sub 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${DBHost}/${DBUser}'
+
+  # CloudWatch Alarms
+  S3TriggerErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'paystub-s3-trigger-errors-${Environment}'
+      AlarmDescription: 'S3 Trigger Lambda function errors'
+      Namespace: 'AWS/Lambda'
+      MetricName: Errors
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !GetAtt S3TriggerFunction.Arn
+      AlarmActions:
+        - !Ref SNSTopicArn
+
+  OCRProcessingErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'paystub-ocr-processing-errors-${Environment}'
+      AlarmDescription: 'OCR processing queue depth too high'
+      Namespace: 'AWS/SQS'
+      MetricName: ApproximateNumberOfMessagesVisible
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 100
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt OCRQueue.QueueName
+      AlarmActions:
+        - !Ref SNSTopicArn
+
+  # SNS Topic for alerts
+  AlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub 'paystub-ocr-alerts-${Environment}'
+      DisplayName: 'Pay Stub OCR Processing Alerts'
+
+Outputs:
+  UploadBucketName:
+    Description: 'S3 bucket for pay stub uploads'
+    Value: !Ref UploadBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-UploadBucket'
+
+  ProcessedBucketName:
+    Description: 'S3 bucket for processed pay stubs'
+    Value: !Ref ProcessedBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-ProcessedBucket'
+
+  AnalysisTableName:
+    Description: 'DynamoDB table for analysis metadata'
+    Value: !Ref AnalysisTable
+    Export:
+      Name: !Sub '${AWS::StackName}-AnalysisTable'
+
+  OCRQueueUrl:
+    Description: 'SQS queue URL for OCR processing'
+    Value: !Ref OCRQueue
+    Export:
+      Name: !Sub '${AWS::StackName}-OCRQueue'
+
+  S3TriggerFunctionArn:
+    Description: 'S3 Trigger Lambda function ARN'
+    Value: !GetAtt S3TriggerFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-S3TriggerFunction'
+
+  AlertsTopicArn:
+    Description: 'SNS topic ARN for alerts'
+    Value: !Ref AlertsTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-AlertsTopic'
