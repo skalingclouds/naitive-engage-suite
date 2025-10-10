@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FileUpload } from "@/components/file-upload";
 import { MultiStepForm, FormData } from "@/components/multi-step-form";
+import Image from "next/image";
 import { 
   Shield, 
   CheckCircle2, 
@@ -177,9 +178,9 @@ return (
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Scale className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              <span className="font-semibold text-lg">WageViolation.ai</span>
+<div className="flex items-center gap-2">
+              <Image src="/logo.svg" alt="Logo" width={28} height={28} priority />
+              <span className="font-semibold text-lg tracking-tight">WageViolation.ai</span>
             </div>
 
             <nav className="hidden md:flex items-center gap-6 text-sm">
