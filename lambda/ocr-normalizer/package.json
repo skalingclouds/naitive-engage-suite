@@ -1,0 +1,22 @@
+{
+  "name": "ocr-normalizer",
+  "version": "1.0.0",
+  "description": "OCR result normalization and validation service",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
+    "@aws-sdk/client-sqs": "^3.600.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.140",
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.10.0",
+    "typescript": "^5.0.0"
+  }
+}
