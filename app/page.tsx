@@ -233,7 +233,42 @@ return (
           <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
             {t("title")}
           </h1>
-          
+feature/paystub-wage-violation-poc-zzw8i50e
+        </div>
+        <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto px-4 mb-8">
+          A modern full-stack TypeScript starter with authentication, database, and UI components
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <HeroAuthButtons />
+          <Button 
+            asChild 
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3"
+          >
+            <a href="/paystub">
+              Check Pay Stub Violations
+            </a>
+          </Button>
+          <Button 
+            asChild 
+            variant="outline"
+            className="border-gray-300 text-gray-700 hover:bg-gray-50 font-medium px-6 py-3"
+          >
+            <a href="/internal">
+              Internal Portal
+            </a>
+          </Button>
+        </div>
+      </div>
+
+      <main className="container mx-auto px-4 sm:px-6 pb-12 sm:pb-8 max-w-5xl">
+        {/* Project Overview */}
+        <div className="text-center mb-8">
+          <div className="text-4xl sm:text-5xl mb-2">🚀</div>
+          <div className="font-bold text-lg sm:text-xl mb-2">Modern Full-Stack Starter</div>
+          <div className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
+            This project includes everything you need to build a modern web application with TypeScript, 
+            authentication, database integration, and a beautiful UI component library.
           <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-8">
             {t("subtitle")}
           </p>
@@ -241,7 +276,7 @@ return (
             <a href="#upload" className="inline-flex items-center rounded-md bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700">Start free analysis</a>
             <a href="#how-it-works" className="inline-flex items-center rounded-md border px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-800">How it works</a>
           </div>
-
+            
           {/* Progress Indicator */}
           <div className="flex items-center justify-center gap-2 mb-8">
             <div className={`flex items-center gap-2 ${
