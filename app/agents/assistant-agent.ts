@@ -259,14 +259,14 @@ Always confirm understanding and offer to clarify complex points.`,
       clarifications: z.array(z.string()),
       understandingCheck: z.string(),
     }).describe('Communication approach and considerations'),
-    explanation: z.string().describe('Clear explanation in the user's language'),
+    explanation: z.string().describe("Clear explanation in the user's language"),
     keyPoints: z.array(z.string()).describe('Key points in simple terms'),
-    nextSteps: z.array(z.string()).describe('Next steps in user's language'),
+    nextSteps: z.array(z.string()).describe("Next steps in the user's language"),
     languageSpecificResources: z.array(z.object({
       resource: z.string(),
       language: z.string(),
       contact: z.string(),
-    })).describe('Resources in the user's language'),
+    })).describe("Resources in the user's language"),
   }),
 });
 
