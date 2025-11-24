@@ -47,7 +47,13 @@ Never make up weather data - always use the weather tool for accurate informatio
 
   // Add error handling for tool failures
   onToolError: (error, toolCall) => {
-    console.error(`Weather tool error for city ${toolCall.args.city}:`, error);
+    const city = typeof toolCall?.args === 'object' && 'city' in toolCall.args
+      ? (toolCall.args as { city?: string }).city
+      : undefined;
+    console.error(
+      `Weather tool error${city ? ` for city ${city}` : ''}:`,
+      error,
+    );
     return {
       error: 'I had trouble getting weather information for that city. Please try again with a different city name.',
       shouldRetry: false,
