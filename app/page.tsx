@@ -249,13 +249,22 @@ feature/paystub-wage-violation-poc-zzw8i50e
               Check Pay Stub Violations
             </a>
           </Button>
-          <Button 
-            asChild 
+          <Button
+            asChild
             variant="outline"
             className="border-gray-300 text-gray-700 hover:bg-gray-50 font-medium px-6 py-3"
           >
             <a href="/internal">
               Internal Portal
+            </a>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="border-green-300 text-green-700 hover:bg-green-50 font-medium px-6 py-3"
+          >
+            <a href="/weather-chat">
+              🤖 AI Weather Chat
             </a>
           </Button>
         </div>
