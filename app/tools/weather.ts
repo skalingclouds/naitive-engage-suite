@@ -87,7 +87,7 @@ function getWeatherDescription(condition: string, temperature: number, humidity:
                          temperature < 65 ? 'Cool' :
                          temperature < 80 ? 'Warm' : 'Hot';
 
-  const conditionDescriptions = {
+  const conditionDescriptions: Record<string, string[]> = {
     'sunny': ['Clear skies', 'Plenty of sunshine', 'Bright and clear'],
     'partly cloudy': ['Partly sunny', 'Mix of sun and clouds', 'Scattered clouds'],
     'cloudy': ['Overcast', 'Mostly cloudy', 'Gray skies'],
@@ -96,7 +96,8 @@ function getWeatherDescription(condition: string, temperature: number, humidity:
     'snowy': ['Snow showers', 'Light snow', 'Wintry precipitation'],
   };
 
-  const conditionDesc = conditionDescriptions[condition][Math.floor(Math.random() * 3)];
+  const descriptions = conditionDescriptions[condition] ?? ['Typical weather', 'Variable conditions', 'Mixed conditions'];
+  const conditionDesc = descriptions[Math.floor(Math.random() * descriptions.length)];
   const humidityDesc = humidity > 70 ? 'and humid' : humidity < 30 ? 'and dry' : 'with comfortable humidity';
 
   return `${tempDescription} with ${conditionDesc.toLowerCase()} ${humidityDesc}.`;
