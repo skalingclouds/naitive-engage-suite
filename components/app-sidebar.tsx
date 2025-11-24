@@ -19,6 +19,8 @@ import {
   IconSearch,
   IconSettings,
   IconUsers,
+  IconCloud,
+  IconRobot,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -39,13 +41,18 @@ const staticData = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
+      title: "Weather Chat",
+      url: "/weather-chat",
+      icon: IconCloud,
+    },
+    {
+      title: "Multi-Agent AI",
+      url: "/multi-agent-chat",
+      icon: IconRobot,
     },
     {
       title: "Analytics",
